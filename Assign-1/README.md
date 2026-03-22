@@ -1,4 +1,31 @@
 # Assginment-1 Part-3
+## Run
+
+### Environment
+- Install dependencies
+    ```bash
+        # python version: 3.12
+        pip install -r requirements.txt
+    ```
+- Model: 
+    ```bash
+    cd Assign-1
+
+    hf download black-forest-labs/FLUX.2-klein-base-4B --local-dir ../models/FLUX.2-klein-base-4B
+    ```
+
+### 
+
+
+### Run
+```bash
+# Generate image only
+python generate_flux2.py
+
+# Generate image + extract attention maps (main script)
+python generate_flux2_attention.py
+```
+
 ## Task
 
 - Generate an image with prompt : A serene mountain landscape at sunset with a lake reflecting the orange sky, a bird flying to the right, a small wooden boat floating on the lake. ![flux output](output/flux2_output.png)

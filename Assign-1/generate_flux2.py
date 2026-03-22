@@ -22,20 +22,20 @@ pipe.to("cpu")
 # no device placement required (doesn't call .to(device)).
 pipe.enable_sequential_cpu_offload()
 
-# Move small, fast components to MPS for speed
-# VAE decode is only ~80MB and benefits hugely from MPS
+# Move small, fast components to device for speed
+# VAE decode is only ~80MB and benefits from acceleration
 try:
-    pipe.vae.to("mps")
-    print("VAE on MPS")
+    pipe.vae.to(DEVICE)
+    print(f"VAE on {DEVICE}")
 except Exception as e:
-    print(f"VAE on MPS failed: {e}")
+    print(f"VAE on {DEVICE} failed: {e}")
 
-# Text encoder is ~1GB — move to MPS if there's room
+# Text encoder is ~1GB — move to device if there's room
 try:
-    pipe.text_encoder.to("mps")
-    print("Text encoder on MPS")
+    pipe.text_encoder.to(DEVICE)
+    print(f"Text encoder on {DEVICE}")
 except Exception as e:
-    print(f"Text encoder on MPS failed: {e}")
+    print(f"Text encoder on {DEVICE} failed: {e}")
 
 
 def generate(
