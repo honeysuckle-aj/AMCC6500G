@@ -275,13 +275,63 @@ plt.savefig('img2text/attention_img2text_per_head_avg_steps.png', dpi=120, bbox_
 plt.close()
 print("Saved: img2text/attention_img2text_per_head_avg_steps.png")
 
-# Figure 3: For each block (row) and denoising step (col), average ALL heads after normalizing each
-# Each denoising step produces 2 forward passes (captures), so group them
-print("\nGenerating block-step heatmaps (avg of 24 normalized heads, 5 blocks × 4 steps)...")
+# Figure 3a: Raw heatmaps (no overlay)
+print("\nGenerating block-step heatmaps (5 blocks × 4 steps)...")
 sorted_blocks = sorted(per_head_attn.keys())
 n_blocks = len(sorted_blocks)
 n_denoise_steps = 4
 pairs_per_step = 2
+
+fig3a, axes3a = plt.subplots(n_blocks, n_denoise_steps, figsize=(5 * n_denoise_steps, 4 * n_blocks))
+if n_blocks == 1:
+    axes3a = axes3a.reshape(1, -1)
+
+for b_idx, block_id in enumerate(sorted_blocks):
+    maps = per_head_attn[block_id]
+    for step_idx in range(n_denoise_steps):
+        ax = axes3a[b_idx, step_idx]
+
+        cap0 = step_idx * pairs_per_step
+        cap1 = cap0 + 1
+
+        all_normalized = []
+        for cap_idx in [cap0, cap1]:
+            for h_idx in range(num_heads):
+                attn_slice = maps[cap_idx][0, h_idx, :, bird_token_idx]
+                spatial = attn_slice.reshape(LATENT_SIZE, LATENT_SIZE).numpy()
+                s_min, s_max = spatial.min(), spatial.max()
+                if s_max > s_min:
+                    spatial_norm = (spatial - s_min) / (s_max - s_min + 1e-8)
+                else:
+                    spatial_norm = spatial
+                all_normalized.append(torch.from_numpy(spatial_norm))
+
+        stacked = torch.stack(all_normalized)
+        avg_heatmap = stacked.mean(dim=0).numpy()
+
+        ax.imshow(avg_heatmap, cmap='hot', interpolation='bilinear')
+        if b_idx == 0:
+            ax.set_title(f"Denoise Step {step_idx}", fontsize=12)
+        if step_idx == 0:
+            ax.set_ylabel(f"{block_id}", fontsize=11)
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+plt.suptitle(f"Avg of Normalized Heads per Block × Step (Image→Text, '{CONCEPT}')\n5 blocks × 4 steps = 20 heatmaps", fontsize=13, y=1.02)
+plt.tight_layout()
+plt.savefig('img2text/best_per_block_step_raw.png', dpi=120, bbox_inches='tight')
+plt.close()
+print(f"Saved: img2text/best_per_block_step_raw.png ({n_blocks}x{n_denoise_steps}={n_blocks*n_denoise_steps} heatmaps)")
+
+# Figure 3b: Overlay version
+print("\nGenerating block-step overlay heatmaps (5 blocks × 4 steps)...")
+print("\nGenerating block-step overlay heatmaps (5 blocks × 4 steps)...")
+sorted_blocks = sorted(per_head_attn.keys())
+n_blocks = len(sorted_blocks)
+n_denoise_steps = 4
+pairs_per_step = 2
+
+gen_img = result.images[0]
 
 fig3, axes3 = plt.subplots(n_blocks, n_denoise_steps, figsize=(5 * n_denoise_steps, 4 * n_blocks))
 if n_blocks == 1:
@@ -295,16 +345,11 @@ for b_idx, block_id in enumerate(sorted_blocks):
         cap0 = step_idx * pairs_per_step
         cap1 = cap0 + 1
 
-        # Collect all head heatmaps for both captures, normalize each, then average
         all_normalized = []
-        max_vals = []
-
         for cap_idx in [cap0, cap1]:
             for h_idx in range(num_heads):
-                attn_slice = maps[cap_idx][0, h_idx, :, bird_token_idx]  # [img_len]
+                attn_slice = maps[cap_idx][0, h_idx, :, bird_token_idx]
                 spatial = attn_slice.reshape(LATENT_SIZE, LATENT_SIZE).numpy()
-                max_vals.append(spatial.max())
-                # Normalize this head
                 s_min, s_max = spatial.min(), spatial.max()
                 if s_max > s_min:
                     spatial_norm = (spatial - s_min) / (s_max - s_min + 1e-8)
@@ -312,11 +357,16 @@ for b_idx, block_id in enumerate(sorted_blocks):
                     spatial_norm = spatial
                 all_normalized.append(torch.from_numpy(spatial_norm))
 
-        # Average all 24 heads (or 48 if 2 captures)
-        stacked = torch.stack(all_normalized)  # [N, H, W]
-        avg_heatmap = stacked.mean(dim=0).numpy()  # [H, W]
+        stacked = torch.stack(all_normalized)
+        avg_heatmap = stacked.mean(dim=0).numpy()
 
-        ax.imshow(avg_heatmap, cmap='hot', interpolation='bilinear')
+        # Upscale to 512x512 and overlay on image
+        attn_tensor = torch.from_numpy(avg_heatmap).unsqueeze(0).unsqueeze(0).float()
+        attn_up = F.interpolate(attn_tensor, size=(512, 512), mode='bilinear', align_corners=False)
+        attn_up = attn_up.squeeze().numpy()
+
+        ax.imshow(gen_img)
+        ax.imshow(attn_up, cmap='jet', alpha=0.6, interpolation='bilinear')
         if b_idx == 0:
             ax.set_title(f"Denoise Step {step_idx}", fontsize=12)
         if step_idx == 0:
@@ -324,11 +374,11 @@ for b_idx, block_id in enumerate(sorted_blocks):
         ax.set_xticks([])
         ax.set_yticks([])
 
-plt.suptitle(f"Avg of Normalized Heads per Block × Step (Image→Text, '{CONCEPT}')\n5 blocks × 4 steps = 20 heatmaps (each = avg of 24 normalized heads)", fontsize=13, y=1.02)
+plt.suptitle(f"Overlay per Block × Step (Image→Text, '{CONCEPT}')\n5 blocks × 4 steps = 20 overlays", fontsize=13, y=1.02)
 plt.tight_layout()
-plt.savefig('img2text/best_per_block_step.png', dpi=120, bbox_inches='tight')
+plt.savefig('img2text/best_per_block_step_overlay.png', dpi=120, bbox_inches='tight')
 plt.close()
-print(f"Saved: img2text/best_per_block_step.png ({n_blocks}x{n_denoise_steps}={n_blocks*n_denoise_steps} heatmaps)")
+print(f"Saved: img2text/best_per_block_step_overlay.png ({n_blocks}x{n_denoise_steps}={n_blocks*n_denoise_steps} overlays)")
 
 # Figure 4: Overlay of MAX across all heads/steps on image
 print("\nGenerating overlay...")
