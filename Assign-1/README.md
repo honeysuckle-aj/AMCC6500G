@@ -28,4 +28,5 @@
 
 ## Summary
 
-The last try is: for each block × step: normalize each of 24 heads to 0-1, then average all 24 heads → one heatmap per block per step. In ![alt text](img2text/best_per_block_step_overlay.png), row 2 to row 4, you can see a bright region of bird in some heatmaps.
+The last try is: for each block × step: normalize each of 24 heads to 0-1, then average all 24 heads → one heatmap per block per step. From row 2 to row 4, you can see a bright region of bird in some heatmaps.
+![attention map](img2text/best_per_block_step_overlay.png).
