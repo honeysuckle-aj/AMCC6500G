@@ -1,0 +1,28 @@
+Cross-Attention Weight Maps (Image → Text, Per-Head)
+
+Method: Captured cross-attention weights from Flux2Attention layers.
+Direction: IMAGE → TEXT — measures how each image token attends to each text token.
+
+This answers: "how much does each pixel/token attend to the 'bird' token?"
+
+- best_per_block_step.png                    : 5 blocks × 4 denoise steps = 20 heatmaps
+                                               Each heatmap = avg of 24 normalized heads for that block/step
+- attention_img2text_per_head_all_maps.png  : ALL 5 blocks × 8 captures × 24 heads = 960 raw heatmaps
+- attention_img2text_per_head_avg_steps.png  : Each block shows 24 heads, averaged over 8 captures
+- attention_img2text_best_per_block.png      : Best single head×step per block (highest max on bird)
+- attention_img2text_overlay.png             : MAX across all 960 maps overlaid on image
+
+Key finding — best_per_block_step.png:
+  Each block (row) × denoise step (col): normalize each of 24 heads to 0-1, then average all heads.
+  - Block 0: Diffuse, broad attention across the whole scene
+  - Block 1: Localized in upper sky area
+  - Block 2: Upper-right localization (bird) ✓ across all steps
+  - Block 3: Lower-center (boat/water area)
+  - Block 4: Sharp upper-right (bird) ✓ consistent across all steps
+
+Notes:
+  - Image→text direction is better for spatial localization than text→image.
+  - Averaging all 24 normalized heads suppresses per-head noise and reveals shared spatial patterns.
+  - Block 4 and Block 2 both show bird localization in upper-right matching "bird flying to the right."
+  - 32×32 spatial resolution (1024 image tokens for 512×512 image).
+  - Raw softmax attention probability values (0-1 scale).

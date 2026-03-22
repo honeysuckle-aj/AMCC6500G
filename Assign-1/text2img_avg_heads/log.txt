@@ -1,0 +1,15 @@
+Cross-Attention Weight Maps (Text → Image, Heads Averaged)
+
+Method: Captured cross-attention weights (QK^T softmax) from Flux2Attention layers.
+Direction: TEXT → IMAGE — measures how each text token attends to image tokens.
+Aggregation: Averaged across all attention heads per block/step.
+
+- attention_heatmaps.png    : MAX aggregation across 5 blocks × 8 steps (bird, mountain, lake, boat)
+- attention_overlay.png     : MAX aggregated heatmap overlaid on generated image
+- attention_bird_per_block.png : Cross-attention for 'bird' per block (MAX over steps)
+- attention_bird_per_step.png  : Cross-attention for 'bird' per denoising step (MAX over blocks)
+
+Notes:
+  - Cross-attention weights measure where each text token sends its attention in the image.
+  - MAX aggregation preserves localized peaks; MEAN was diffuse.
+  - 32×32 spatial resolution (1024 image tokens for 512×512 image).

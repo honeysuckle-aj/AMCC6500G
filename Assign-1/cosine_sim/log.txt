@@ -1,0 +1,17 @@
+Cosine Similarity of Attention Outputs
+
+Method: Captured attention layer output hidden states, then computed cosine similarity
+        between each concept's text embedding (projected to 3072-D via context_embedder)
+        and the attention output at each spatial position.
+Direction: Computed similarity between concept embedding and attention output hidden state.
+
+- attention_cosine_sim_aggregated.png : MAX vs MEAN aggregation across all 40 maps (5 blocks × 8 steps)
+- attention_cosine_sim_all_maps.png   : ALL 5 blocks × 8 steps = 40 individual cosine similarity maps
+- attention_cosine_sim_per_block.png  : Per-block cosine similarity (MAX over steps)
+- attention_cosine_sim_overlay.png    : Aggregated (MAX) cosine similarity overlaid on image
+
+Notes:
+  - This approach measures semantic similarity, not spatial attention.
+  - Results were very faint/diffuse — cosine similarity of outputs is not ideal for localization.
+  - The text embedding was projected from 7680-D (stacked Qwen3 layers 9,18,27) to 3072-D.
+  - Cross-attention weights (text2img_avg_heads) are better for spatial localization.

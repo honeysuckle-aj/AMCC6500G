@@ -1,0 +1,15 @@
+Cross-Attention Weight Maps (Text → Image, Per-Head)
+
+Method: Same as text2img_avg_heads but preserved per-head information.
+Direction: TEXT → IMAGE — measures how each text token attends to image tokens.
+Aggregation: Kept each of the 24 heads separate; visualized individually.
+
+- attention_per_head_all_maps.png  : ALL 5 blocks × 8 steps × 24 heads = 960 individual heatmaps
+- attention_per_head_avg_steps.png : Each block shows 24 heads side-by-side, averaged over steps
+- attention_per_head_overlay.png   : MAX across all head/step maps overlaid on image
+
+Notes:
+  - Each of the 24 attention heads in each block has a different spatial pattern.
+  - Block 0 showed strong localized bird attention in upper-right across most heads.
+  - Other blocks (1-4) had fainter or differently localized patterns.
+  - 32×32 spatial resolution (1024 image tokens for 512×512 image).
